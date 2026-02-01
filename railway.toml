@@ -13,3 +13,4 @@ memoryBytes = 512000000
 
 [deploy.multiRegionConfig.europe-west4-drams3a]
 numReplicas = 1
+
