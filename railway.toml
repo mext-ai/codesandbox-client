@@ -1,7 +1,3 @@
-[build]
-builder = "RAILPACK"
-buildCommand = "npm run build:deps && npm run build:sandpack"
-
 [deploy]
 runtime = "V2"
 numReplicas = 1
@@ -12,8 +8,8 @@ sleepApplication = false
 useLegacyStacker = false
 
 [deploy.limitOverride.containers]
-cpu = 2
-memoryBytes = 2000000000
+cpu = 1
+memoryBytes = 512000000
 
 [deploy.multiRegionConfig.europe-west4-drams3a]
 numReplicas = 1
