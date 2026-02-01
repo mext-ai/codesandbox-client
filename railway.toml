@@ -1,5 +1,6 @@
 [build]
 builder = "RAILPACK"
+buildCommand = "npm install -g serve"
 
 [deploy]
 runtime = "V2"
