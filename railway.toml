@@ -1,11 +1,10 @@
 [build]
 builder = "RAILPACK"
-buildCommand = "npm install -g serve"
 
 [deploy]
 runtime = "V2"
 numReplicas = 1
-startCommand = "npx serve www -l ${PORT:-3000}"
+startCommand = "npm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 sleepApplication = false
