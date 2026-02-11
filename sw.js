@@ -1,24 +1,8 @@
-const SW_VERSION = '1.0.3';
-console.log(`[SW] Service Worker version ${SW_VERSION} initializing`);
+/// Custom Service Worker Logic for Gemini Proxy
+/* global self, caches, fetch */
 
-self.skipWaiting();
-
-// Log service worker lifecycle events
-self.addEventListener('install', (event) => {
-  console.log(`[SW v${SW_VERSION}] Installing...`);
-});
-
-self.addEventListener('activate', (event) => {
-  console.log(`[SW v${SW_VERSION}] Activated and ready to intercept requests`);
-  event.waitUntil(
-    (async () => {
-      // Claim all clients immediately
-      await self.clients.claim();
-      const clients = await self.clients.matchAll({ type: 'window' });
-      console.log(`[SW v${SW_VERSION}] Now controlling ${clients.length} client(s)`);
-    })()
-  );
-});
+const SW_VERSION = '1.0.5-code';
+console.log(`[SW] Custom Service Worker logic version ${SW_VERSION} initializing`);
 
 const GEMINI_CACHE_NAME = 'gemini-proxy-cache-v1';
 
@@ -69,14 +53,15 @@ function isStaticAssetUrl(url) {
     const pathname = urlObj.pathname.toLowerCase();
     // Check if the pathname ends with any of the static extensions
     return staticExtensions.some(ext => pathname.endsWith(ext));
-  } catch {
+  } catch (e) {
     // If URL parsing fails, fall back to simple check
     const lowerUrl = url.toLowerCase();
     return staticExtensions.some(ext => lowerUrl.endsWith(ext));
   }
 }
 
-self.addEventListener('fetch', (event) => {
+// Add custom fetch listener
+self.addEventListener('fetch', function(event) {
   const url = new URL(event.request.url);
   
   // Intercept direct calls to Google APIs and proxy them
@@ -85,7 +70,7 @@ self.addEventListener('fetch', (event) => {
     console.log(`[SW v${SW_VERSION}] googleapis.com request:`, {
       url: url.href,
       pathname: url.pathname,
-      isStatic,
+      isStatic: isStatic,
       method: event.request.method
     });
     
@@ -98,11 +83,15 @@ self.addEventListener('fetch', (event) => {
     
     // For API calls, proxy through our backend
     event.respondWith(
-      (async () => {
+      (async function() {
         try {
+          // Remove the 'key' query parameter before proxying (it's replaced in backend)
+          const cleanUrl = new URL(url.href);
+          cleanUrl.searchParams.delete('key');
+          
           // Get the base URL of our app (handles different environments)
           const baseUrl = getBackendUrl();
-          const proxyUrl = `${baseUrl}/api/ai/gemini/proxy/${encodeURIComponent(url.href)}`;
+          const proxyUrl = `${baseUrl}/api/ai/gemini/proxy/${encodeURIComponent(cleanUrl.href)}`;
 
           console.log('[SW] Proxying API call to:', proxyUrl);
 
@@ -191,7 +180,11 @@ async function handleGeminiRequest(event) {
   }
 }
 
-async function fetchWithRetry(request, retries = 3) {
+async function fetchWithRetry(request, retries) {
+  if (typeof retries === 'undefined') {
+    retries = 3;
+  }
+  
   try {
     const response = await fetch(request);
     // Retry on 5xx errors or network failures (fetch throws on network failure)
@@ -206,3 +199,5 @@ async function fetchWithRetry(request, retries = 3) {
     throw err;
   }
 }
+
+console.log('[SW] Custom service worker logic loaded');
