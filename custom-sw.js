@@ -1,7 +1,7 @@
 /// Custom Service Worker Logic for Gemini Proxy
 /* global self, caches, fetch */
 
-const SW_VERSION = '1.0.3';
+const SW_VERSION = '1.0.5-code';
 console.log(`[SW] Custom Service Worker logic version ${SW_VERSION} initializing`);
 
 const GEMINI_CACHE_NAME = 'gemini-proxy-cache-v1';
@@ -85,9 +85,13 @@ self.addEventListener('fetch', function(event) {
     event.respondWith(
       (async function() {
         try {
+          // Remove the 'key' query parameter before proxying (it's replaced in backend)
+          const cleanUrl = new URL(url.href);
+          cleanUrl.searchParams.delete('key');
+          
           // Get the base URL of our app (handles different environments)
           const baseUrl = getBackendUrl();
-          const proxyUrl = `${baseUrl}/api/ai/gemini/proxy/${encodeURIComponent(url.href)}`;
+          const proxyUrl = `${baseUrl}/api/ai/gemini/proxy/${encodeURIComponent(cleanUrl.href)}`;
 
           console.log('[SW] Proxying API call to:', proxyUrl);
 
