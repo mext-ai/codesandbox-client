@@ -66,17 +66,23 @@ self.addEventListener('fetch', function(event) {
   
   // Intercept direct calls to Google APIs and proxy them
   if (url.hostname.endsWith('googleapis.com')) {
+    // Check if this is a Google API download endpoint (needs authentication)
+    const isDownloadEndpoint = url.pathname.includes('/files/') && 
+                                (url.pathname.includes(':download') || url.searchParams.get('alt') === 'media');
+    
     const isStatic = isStaticAssetUrl(url.href);
     console.log(`[SW v${SW_VERSION}] googleapis.com request:`, {
       url: url.href,
       pathname: url.pathname,
+      isDownloadEndpoint: isDownloadEndpoint,
       isStatic: isStatic,
       method: event.request.method
     });
     
-    // Check if this is a static asset (audio, images, fonts, etc.)
-    if (isStatic) {
-      // For static assets, fetch directly from Google - no proxy needed
+    // Download endpoints always need to be proxied for authentication
+    // Regular static assets (fonts, CSS from googleapis.com) can be fetched directly
+    if (isStatic && !isDownloadEndpoint) {
+      // For static assets that don't require auth, fetch directly from Google
       console.log('[SW] Static asset detected, fetching directly:', url.href);
       return; // Let the browser fetch it normally
     }
